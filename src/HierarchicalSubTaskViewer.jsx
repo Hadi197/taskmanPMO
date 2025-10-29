@@ -21,7 +21,8 @@ import {
   Trash2,
   Save,
   X,
-  Plus
+  Plus,
+  ArrowLeft
 } from 'lucide-react';
 import SubSubTaskInput from './SubSubTaskInput';
 import { supabase } from './supabaseClient';
@@ -56,7 +57,7 @@ const VIEW_MODES = {
   STATS: 'stats'
 };
 
-export default function HierarchicalSubTaskViewer({ boardId, taskId }) {
+export default function HierarchicalSubTaskViewer({ boardId, taskId, onBack }) {
   const [subSubTasks, setSubSubTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState(VIEW_MODES.LIST);
@@ -735,14 +736,14 @@ Please try again or contact support if the problem persists.
                         className="p-1 text-green-600 hover:bg-green-100 rounded"
                         title="Save changes"
                       >
-                        <Save className="w-4 h-4" />
+                        <Save className="w-5 h-5" />
                       </button>
                       <button
                         onClick={handleCancelEdit}
                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
                         title="Cancel editing"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                       </button>
                     </>
                   ) : (
@@ -755,7 +756,7 @@ Please try again or contact support if the problem persists.
                         className="p-1 text-blue-600 hover:bg-blue-100 rounded"
                         title="Edit task"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-5 h-5" />
                       </button>
                       {/* Upload button hidden */}
                       <button
@@ -766,7 +767,7 @@ Please try again or contact support if the problem persists.
                         className="p-1 text-red-600 hover:bg-red-100 rounded"
                         title="Delete task"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </>
                   )}
@@ -951,14 +952,14 @@ Please try again or contact support if the problem persists.
                               className="p-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
                               title="Save changes"
                             >
-                              <Save className="w-4 h-4" />
+                              <Save className="w-5 h-5" />
                             </button>
                             <button
                               onClick={handleCancelEdit}
                               className="p-2 bg-gradient-to-r from-gray-500 to-slate-600 hover:from-gray-600 hover:to-slate-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
                               title="Cancel editing"
                             >
-                              <X className="w-4 h-4" />
+                              <X className="w-5 h-5" />
                             </button>
                           </>
                         ) : (
@@ -971,7 +972,7 @@ Please try again or contact support if the problem persists.
                               className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
                               title="Edit task"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-5 h-5" />
                             </button>
                             <button
                               onClick={(e) => {
@@ -985,7 +986,7 @@ Please try again or contact support if the problem persists.
                               className="p-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
                               title="Upload document"
                             >
-                              <Upload className="w-4 h-4" />
+                              <Upload className="w-5 h-5" />
                             </button>
                             <button
                               onClick={(e) => {
@@ -995,7 +996,7 @@ Please try again or contact support if the problem persists.
                               className="p-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
                               title="Delete task"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-5 h-5" />
                             </button>
                           </>
                         )}
@@ -1383,7 +1384,7 @@ Please try again or contact support if the problem persists.
               onClick={() => setShowUploadModal(true)}
               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="w-5 h-5 mr-2" />
               Upload Document
             </button>
             <button
@@ -1393,7 +1394,7 @@ Please try again or contact support if the problem persists.
               }}
               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             >
-              <Edit2 className="w-4 h-4 mr-2" />
+              <Edit2 className="w-5 h-5 mr-2" />
               Edit Task
             </button>
           </div>
@@ -1555,6 +1556,15 @@ Please try again or contact support if the problem persists.
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 border-b border-indigo-300 px-8 py-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="w-12 h-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 border border-white/20"
+                title="Back to Tasks"
+              >
+                <ArrowLeft className="w-5 h-5 text-white" />
+              </button>
+            )}
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl transform rotate-3 hover:rotate-0 transition-transform duration-300">
               <TreePine className="w-6 h-6 text-white" />
             </div>

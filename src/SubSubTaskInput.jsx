@@ -384,7 +384,7 @@ export default function SubSubTaskInput({ taskId, onClose, onTaskAdded, autoOpen
           <span className="text-sm">
             {selectedParent ? (
               <span className="flex items-center">
-                <Layers className="w-4 h-4 mr-2 text-gray-500" />
+                <Layers className="w-5 h-5 mr-2 text-gray-500" />
                 {selectedParent.title}
                 <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">
                   Level {selectedParent.level || 0}
@@ -394,7 +394,7 @@ export default function SubSubTaskInput({ taskId, onClose, onTaskAdded, autoOpen
               'Select parent task (optional)'
             )}
           </span>
-          {showParentSelector ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          {showParentSelector ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
         </button>
 
         {showParentSelector && (
@@ -419,7 +419,7 @@ export default function SubSubTaskInput({ taskId, onClose, onTaskAdded, autoOpen
                 }}
                 className="w-full p-2 text-left hover:bg-gray-50 text-sm flex items-center"
               >
-                <Layers className="w-4 h-4 mr-2 text-gray-500" />
+                <Layers className="w-5 h-5 mr-2 text-gray-500" />
                 <span className="truncate">{option.title}</span>
                 <span className="ml-auto text-xs bg-gray-100 px-2 py-1 rounded">
                   Level {option.level || 0}
@@ -438,7 +438,7 @@ export default function SubSubTaskInput({ taskId, onClose, onTaskAdded, autoOpen
         onClick={() => setIsOpen(true)}
         className="flex items-center px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
       >
-        <Plus className="w-4 h-4 mr-2" />
+        <Plus className="w-5 h-5 mr-2" />
         Add Sub-Sub Task
       </button>
     );
@@ -460,7 +460,7 @@ export default function SubSubTaskInput({ taskId, onClose, onTaskAdded, autoOpen
           }}
           className="text-indigo-400 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600 p-3 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-110"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 

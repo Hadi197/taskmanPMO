@@ -172,7 +172,7 @@ export default function BoardList({ onBoardSelect, onCreateBoard }) {
             onClick={() => setShowCreateModal(true)}
             className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
           >
-            <Plus className="w-6 h-6 mr-3" />
+            <Plus className="w-5 h-5 mr-3" />
             Create Board
           </button>
         </div>
@@ -207,7 +207,7 @@ export default function BoardList({ onBoardSelect, onCreateBoard }) {
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
             >
-              <Plus className="w-6 h-6 mr-3" />
+              <Plus className="w-5 h-5 mr-3" />
               Create Your First Board
             </button>
           )}
@@ -347,7 +347,7 @@ export default function BoardList({ onBoardSelect, onCreateBoard }) {
           <div className="bg-gradient-to-br from-white to-indigo-50 rounded-3xl shadow-2xl p-10 w-full max-w-md border-2 border-indigo-200">
             <div className="flex items-center space-x-4 mb-8">
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl">
-                <Plus className="w-6 h-6 text-white" />
+                <Plus className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-indigo-900">Create New Board</h2>
             </div>

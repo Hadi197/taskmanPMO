@@ -370,7 +370,7 @@ export default function MondayClone() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-lg border border-white/20">
-                <Check className="w-7 h-7 drop-shadow-sm" />
+                <Check className="w-7 h-7 text-white drop-shadow-sm" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-white to-indigo-100 bg-clip-text text-transparent drop-shadow-sm">
@@ -384,7 +384,7 @@ export default function MondayClone() {
                 onClick={() => setShowNewBoard(true)}
                 className="bg-gradient-to-r from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 backdrop-blur-sm px-6 py-3 rounded-2xl font-semibold transition-all duration-300 flex items-center gap-3 shadow-xl hover:shadow-2xl transform hover:scale-105 border border-white/20"
               >
-                <Plus size={20} />
+                <Plus className="w-5 h-5 text-white" />
                 New Board
               </button>
             )}
@@ -432,7 +432,7 @@ export default function MondayClone() {
                     onClick={() => deleteBoard(board.id)}
                     className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl transform hover:scale-110"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 className="w-4 h-4 text-white" />
                   </button>
                 </div>
               ))}
@@ -536,7 +536,7 @@ export default function MondayClone() {
           onViewChange={setCurrentView}
         />
       ) : currentView === 'hierarchical' ? (
-        <HierarchicalSubTaskViewer boardId={currentBoardId} taskId={selectedTaskId} />
+        <HierarchicalSubTaskViewer boardId={currentBoardId} taskId={selectedTaskId} onBack={() => setCurrentView('board')} />
       ) : (
         currentBoard ? (
           <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
@@ -566,7 +566,7 @@ export default function MondayClone() {
             <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-6 mb-6 shadow-xl border border-indigo-100/50 backdrop-blur-sm">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex-1 min-w-64 relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-indigo-400" size={20} />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-indigo-400 w-5 h-5" />
                   <input
                     type="text"
                     placeholder="Search tasks..."
@@ -589,7 +589,7 @@ export default function MondayClone() {
                   onClick={addTask}
                   className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
-                  <Plus size={20} />
+                  <Plus className="w-5 h-5" />
                   New Task
                 </button>
               </div>
@@ -641,7 +641,7 @@ export default function MondayClone() {
                       onClick={addTask}
                       className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 mx-auto"
                     >
-                      <Plus size={20} />
+                      <Plus className="w-5 h-5" />
                       Create First Task
                     </button>
                   )}
@@ -661,7 +661,7 @@ export default function MondayClone() {
                 onClick={() => setShowNewBoard(true)}
                 className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-8 py-4 rounded-xl font-medium hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 mx-auto"
               >
-                <Plus size={24} />
+                <Plus className="w-6 h-6" />
                 Create Board
               </button>
             </div>
@@ -679,7 +679,7 @@ function DashboardView({ boards, stats, workload, statusBreakdown, priorityDistr
       <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-6 mb-8 shadow-xl border border-indigo-100/50 backdrop-blur-sm">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-64 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-indigo-400" size={20} />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-indigo-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Search all tasks..."
@@ -1041,7 +1041,7 @@ function TaskRow({ task, onUpdate, onDelete, onCreateSubTask }) {
               task.person ? personColor : 'bg-gray-400'
             }`}
           >
-            <User size={16} />
+            <User className="w-4 h-4" />
             {task.person || 'Unassigned'}
           </button>
           {showPersonMenu && (
@@ -1054,7 +1054,7 @@ function TaskRow({ task, onUpdate, onDelete, onCreateSubTask }) {
                 className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150 flex items-center gap-3"
               >
                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                  <User size={16} className="text-gray-500" />
+                  <User className="w-4 h-4 text-gray-500" />
                 </div>
                 Unassigned
               </button>
@@ -1173,13 +1173,13 @@ function TaskRow({ task, onUpdate, onDelete, onCreateSubTask }) {
             className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-all duration-200"
             title="Create Sub Task"
           >
-            <TreePine size={18} />
+            <TreePine className="w-5 h-5" />
           </button>
           <button
             onClick={() => onDelete(task.id)}
             className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200"
           >
-            <Trash2 size={18} />
+            <Trash2 className="w-5 h-5" />
           </button>
         </div>
       </td>
