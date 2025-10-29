@@ -289,42 +289,56 @@ export default function MondayClone() {
   };
 
   const getStatusBreakdown = () => {
-    const statusCounts = {
-      'Not Started': 0,
-      'Working on it': 0,
-      'Stuck': 0,
-      'Done': 0,
-      'Review': 0
+    const statusData = {
+      'Not Started': { count: 0, people: [] },
+      'Working on it': { count: 0, people: [] },
+      'Stuck': { count: 0, people: [] },
+      'Done': { count: 0, people: [] },
+      'Review': { count: 0, people: [] }
     };
 
     boards.forEach(board => {
       (board.tasks || []).forEach(task => {
-        if (statusCounts[task.status] !== undefined) {
-          statusCounts[task.status]++;
+        if (statusData[task.status] !== undefined) {
+          statusData[task.status].count++;
+          if (task.person && !statusData[task.status].people.includes(task.person)) {
+            statusData[task.status].people.push(task.person);
+          }
         }
       });
     });
 
-    return Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+    return Object.entries(statusData).map(([status, data]) => ({
+      status,
+      count: data.count,
+      people: data.people
+    }));
   };
 
   const getPriorityDistribution = () => {
-    const priorityCounts = {
-      'Low': 0,
-      'Medium': 0,
-      'High': 0,
-      'Critical': 0
+    const priorityData = {
+      'Low': { count: 0, people: [] },
+      'Medium': { count: 0, people: [] },
+      'High': { count: 0, people: [] },
+      'Critical': { count: 0, people: [] }
     };
 
     boards.forEach(board => {
       (board.tasks || []).forEach(task => {
-        if (priorityCounts[task.priority] !== undefined) {
-          priorityCounts[task.priority]++;
+        if (priorityData[task.priority] !== undefined) {
+          priorityData[task.priority].count++;
+          if (task.person && !priorityData[task.priority].people.includes(task.person)) {
+            priorityData[task.priority].people.push(task.person);
+          }
         }
       });
     });
 
-    return Object.entries(priorityCounts).map(([priority, count]) => ({ priority, count }));
+    return Object.entries(priorityData).map(([priority, data]) => ({
+      priority,
+      count: data.count,
+      people: data.people
+    }));
   };
 
   const getTopContributors = () => {
@@ -522,6 +536,13 @@ export default function MondayClone() {
           onCreateBoard={(board) => {
             setCurrentBoardId(board.id);
             setCurrentView('board');
+          }}
+          onBoardUpdate={(updatedBoard) => {
+            setBoards(prevBoards => prevBoards.map(board =>
+              board.id === updatedBoard.id
+                ? { ...board, name: updatedBoard.name, description: updatedBoard.description }
+                : board
+            ));
           }}
         />
       ) : currentView === 'dashboard' ? (
@@ -777,7 +798,7 @@ function DashboardView({ boards, stats, workload, statusBreakdown, priorityDistr
         <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-6 shadow-xl border border-indigo-100/50 backdrop-blur-sm">
           <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">📈 Status Breakdown</h3>
           <div className="space-y-3">
-            {statusBreakdown.map(({ status, count }) => {
+            {statusBreakdown.map(({ status, count, people }) => {
               const percentage = stats.totalTasks > 0 ? Math.round((count / stats.totalTasks) * 100) : 0;
               const statusColors = {
                 'Not Started': 'bg-gradient-to-r from-slate-400 to-slate-500',
@@ -787,20 +808,48 @@ function DashboardView({ boards, stats, workload, statusBreakdown, priorityDistr
                 'Review': 'bg-gradient-to-r from-indigo-400 to-purple-500'
               };
               return (
-                <div key={status} className="flex items-center justify-between p-3 bg-white/60 rounded-xl backdrop-blur-sm border border-indigo-100/30">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full ${statusColors[status]} shadow-sm`} />
-                    <span className="text-sm font-semibold text-indigo-700">{status}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-indigo-600">{count}</span>
-                    <div className="w-20 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full h-2 shadow-inner">
-                      <div
-                        className={`h-2 rounded-full ${statusColors[status]} shadow-sm`}
-                        style={{ width: `${percentage}%` }}
-                      />
+                <div key={status} className="p-4 bg-white/60 rounded-xl backdrop-blur-sm border border-indigo-100/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded-full ${statusColors[status]} shadow-sm`} />
+                      <span className="text-sm font-semibold text-indigo-700">{status}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-indigo-600">{count} tasks</span>
+                      <div className="w-20 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full h-2 shadow-inner">
+                        <div
+                          className={`h-2 rounded-full ${statusColors[status]} shadow-sm`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
+                  {people.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs text-indigo-600 uppercase tracking-wide font-semibold">Assigned People</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {people.slice(0, 4).map((person, index) => {
+                          const member = TEAM_MEMBERS.find(m => m.name === person);
+                          return (
+                            <div
+                              key={index}
+                              className={`inline-flex items-center px-2 py-1 ${member?.color || 'bg-gradient-to-r from-slate-400 to-slate-500'} text-white text-xs font-bold rounded-full shadow-sm`}
+                            >
+                              {person}
+                            </div>
+                          );
+                        })}
+                        {people.length > 4 && (
+                          <div className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 text-xs font-bold rounded-full shadow-sm border border-gray-200">
+                            +{people.length - 4} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -903,7 +952,7 @@ function DashboardView({ boards, stats, workload, statusBreakdown, priorityDistr
         <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-6 shadow-xl border border-indigo-100/50 backdrop-blur-sm">
           <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">📈 Priority Distribution</h3>
           <div className="space-y-3">
-            {priorityDistribution.map(({ priority, count }) => {
+            {priorityDistribution.map(({ priority, count, people }) => {
               const percentage = stats.totalTasks > 0 ? Math.round((count / stats.totalTasks) * 100) : 0;
               const priorityColors = {
                 'Low': 'bg-gradient-to-r from-slate-400 to-slate-500',
@@ -912,20 +961,48 @@ function DashboardView({ boards, stats, workload, statusBreakdown, priorityDistr
                 'Critical': 'bg-gradient-to-r from-red-500 to-rose-600'
               };
               return (
-                <div key={priority} className="flex items-center justify-between p-3 bg-white/60 rounded-xl backdrop-blur-sm border border-indigo-100/30">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full ${priorityColors[priority]} shadow-sm`} />
-                    <span className="text-sm font-semibold text-indigo-700">{priority}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-indigo-600">{count}</span>
-                    <div className="w-20 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full h-2 shadow-inner">
-                      <div
-                        className={`h-2 rounded-full ${priorityColors[priority]} shadow-sm`}
-                        style={{ width: `${percentage}%` }}
-                      />
+                <div key={priority} className="p-4 bg-white/60 rounded-xl backdrop-blur-sm border border-indigo-100/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded-full ${priorityColors[priority]} shadow-sm`} />
+                      <span className="text-sm font-semibold text-indigo-700">{priority}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-indigo-600">{count} tasks</span>
+                      <div className="w-20 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full h-2 shadow-inner">
+                        <div
+                          className={`h-2 rounded-full ${priorityColors[priority]} shadow-sm`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
+                  {people.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs text-indigo-600 uppercase tracking-wide font-semibold">Assigned People</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {people.slice(0, 4).map((person, index) => {
+                          const member = TEAM_MEMBERS.find(m => m.name === person);
+                          return (
+                            <div
+                              key={index}
+                              className={`inline-flex items-center px-2 py-1 ${member?.color || 'bg-gradient-to-r from-slate-400 to-slate-500'} text-white text-xs font-bold rounded-full shadow-sm`}
+                            >
+                              {person}
+                            </div>
+                          );
+                        })}
+                        {people.length > 4 && (
+                          <div className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 text-xs font-bold rounded-full shadow-sm border border-gray-200">
+                            +{people.length - 4} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -10,13 +10,17 @@ const STATUS_COLORS = {
   'Review': 'bg-blue-500'
 };
 
-export default function BoardList({ onBoardSelect, onCreateBoard }) {
+export default function BoardList({ onBoardSelect, onCreateBoard, onBoardUpdate }) {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [newBoardDescription, setNewBoardDescription] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingBoard, setEditingBoard] = useState(null);
+  const [editBoardName, setEditBoardName] = useState('');
+  const [editBoardDescription, setEditBoardDescription] = useState('');
 
   useEffect(() => {
     loadBoards();
@@ -127,23 +131,55 @@ export default function BoardList({ onBoardSelect, onCreateBoard }) {
     }
   };
 
+  const openEditModal = (board) => {
+    setEditingBoard(board);
+    setEditBoardName(board.name);
+    setEditBoardDescription(board.description || '');
+    setShowEditModal(true);
+  };
+
+  const editBoard = async () => {
+    if (!editBoardName.trim() || !editingBoard) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('boards')
+        .update({
+          name: editBoardName.trim(),
+          description: editBoardDescription.trim()
+        })
+        .eq('id', editingBoard.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setBoards(prev => prev.map(board =>
+        board.id === editingBoard.id
+          ? { ...board, name: data.name, description: data.description }
+          : board
+      ));
+
+      // Call parent callback if provided
+      if (onBoardUpdate) {
+        onBoardUpdate(data);
+      }
+
+      setShowEditModal(false);
+      setEditingBoard(null);
+      setEditBoardName('');
+      setEditBoardDescription('');
+    } catch (error) {
+      console.error('Error editing board:', error);
+      alert('Failed to edit board. Please try again.');
+    }
+  };
+
   const filteredBoards = boards.filter(board =>
     board.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (board.description && board.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Done':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'Working on it':
-        return <Clock className="w-4 h-4 text-orange-500" />;
-      case 'Stuck':
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-400" />;
-    }
-  };
 
   if (loading) {
     return (
@@ -240,11 +276,22 @@ export default function BoardList({ onBoardSelect, onCreateBoard }) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Could add dropdown menu here
+                        openEditModal(board);
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-3 hover:bg-indigo-100 rounded-xl transition-all duration-300 shadow-lg"
+                      className="opacity-0 group-hover:opacity-100 p-3 hover:bg-indigo-100 rounded-xl transition-all duration-300 shadow-lg mr-2"
+                      title="Edit board"
                     >
-                      <MoreVertical className="w-5 h-5 text-indigo-500" />
+                      <Edit2 className="w-5 h-5 text-indigo-500" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteBoard(board.id, board.name);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-3 hover:bg-red-100 rounded-xl transition-all duration-300 shadow-lg"
+                      title="Delete board"
+                    >
+                      <Trash2 className="w-5 h-5 text-red-500" />
                     </button>
                   </div>
                 </div>
@@ -324,16 +371,6 @@ export default function BoardList({ onBoardSelect, onCreateBoard }) {
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteBoard(board.id, board.name);
-                    }}
-                    className="text-red-500 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600 p-3 rounded-xl transition-all duration-300 opacity-0 group-hover:opacity-100 shadow-lg hover:shadow-xl transform hover:scale-110"
-                    title="Delete board"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
                 </div>
               </div>
             </div>
@@ -398,6 +435,70 @@ export default function BoardList({ onBoardSelect, onCreateBoard }) {
                 className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-2xl transition-all duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
               >
                 Create Board
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Board Modal */}
+      {showEditModal && editingBoard && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-white to-indigo-50 rounded-3xl shadow-2xl p-10 w-full max-w-md border-2 border-indigo-200">
+            <div className="flex items-center space-x-4 mb-8">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+                <Edit2 className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-indigo-900">Edit Board</h2>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-indigo-800 mb-3">
+                  Board Name *
+                </label>
+                <input
+                  type="text"
+                  value={editBoardName}
+                  onChange={(e) => setEditBoardName(e.target.value)}
+                  placeholder="Enter board name"
+                  className="w-full px-4 py-4 border-2 border-indigo-200 rounded-2xl focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 transition-all duration-300 bg-white shadow-lg"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-indigo-800 mb-3">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={editBoardDescription}
+                  onChange={(e) => setEditBoardDescription(e.target.value)}
+                  placeholder="Enter board description"
+                  rows={4}
+                  className="w-full px-4 py-4 border-2 border-indigo-200 rounded-2xl focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 transition-all duration-300 resize-none bg-white shadow-lg"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-4 mt-10">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingBoard(null);
+                  setEditBoardName('');
+                  setEditBoardDescription('');
+                }}
+                className="px-8 py-3 bg-gradient-to-r from-gray-500 to-slate-600 hover:from-gray-600 hover:to-slate-700 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={editBoard}
+                disabled={!editBoardName.trim()}
+                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-2xl transition-all duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+              >
+                Update Board
               </button>
             </div>
           </div>
