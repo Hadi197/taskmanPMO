@@ -596,7 +596,7 @@ export default function MondayClone() {
             </div>
 
             {/* Task Table */}
-            <div className="bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30 rounded-2xl shadow-xl border border-indigo-100/50 backdrop-blur-sm overflow-hidden">
+            <div className="bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30 rounded-2xl shadow-xl border border-indigo-100/50 backdrop-blur-sm overflow-visible">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
                   <tr>
@@ -1045,7 +1045,7 @@ function TaskRow({ task, onUpdate, onDelete, onCreateSubTask }) {
             {task.person || 'Unassigned'}
           </button>
           {showPersonMenu && (
-            <div className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl py-2 w-56 max-h-64 overflow-y-auto">
+            <div className="absolute z-[100] mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl py-2 w-56 max-h-64 overflow-y-auto">
               <button
                 onClick={() => {
                   onUpdate(task.id, 'person', null);
@@ -1090,7 +1090,7 @@ function TaskRow({ task, onUpdate, onDelete, onCreateSubTask }) {
             {task.status}
           </button>
           {showStatusMenu && (
-            <div className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl py-2 w-48">
+            <div className="absolute z-[100] mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl py-2 w-48">
               {STATUS_OPTIONS.map(status => (
                 <button
                   key={status.label}
@@ -1121,7 +1121,7 @@ function TaskRow({ task, onUpdate, onDelete, onCreateSubTask }) {
             {task.priority}
           </button>
           {showPriorityMenu && (
-            <div className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl py-2 w-40">
+            <div className="absolute z-[100] mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl py-2 w-40">
               {PRIORITY_OPTIONS.map(priority => (
                 <button
                   key={priority.label}
