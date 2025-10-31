@@ -14,6 +14,7 @@ export default function Team() {
     email: '',
     nipp: '',
     jabatan: '',
+    role: 'Level1',
     color: '#8B5CF6'
   });
 
@@ -52,6 +53,7 @@ export default function Team() {
             email: memberForm.email,
             nipp: memberForm.nipp,
             jabatan: memberForm.jabatan,
+            role: memberForm.role,
             color: memberForm.color
           })
           .eq('id', editingMember.id);
@@ -66,6 +68,7 @@ export default function Team() {
             email: memberForm.email,
             nipp: memberForm.nipp,
             jabatan: memberForm.jabatan,
+            role: memberForm.role,
             color: memberForm.color
           }]);
 
@@ -73,7 +76,7 @@ export default function Team() {
       }
 
       // Reset form and reload
-      setMemberForm({ name: '', email: '', nipp: '', jabatan: '', color: '#8B5CF6' });
+      setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
       setShowAddModal(false);
       setEditingMember(null);
       loadTeamMembers();
@@ -89,6 +92,7 @@ export default function Team() {
       email: member.email || '',
       nipp: member.nipp || '',
       jabatan: member.jabatan || '',
+      role: member.role || 'Level1',
       color: member.color || '#8B5CF6'
     });
     setShowAddModal(true);
@@ -152,7 +156,7 @@ export default function Team() {
         <button
           onClick={() => {
             setEditingMember(null);
-            setMemberForm({ name: '', email: '', nipp: '', jabatan: '', color: '#8B5CF6' });
+            setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
             setShowAddModal(true);
           }}
           className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center gap-2"
@@ -193,6 +197,11 @@ export default function Team() {
                   {member.jabatan && (
                     <p className="text-sm text-gray-500">
                       Jabatan: {member.jabatan}
+                    </p>
+                  )}
+                  {member.role && (
+                    <p className="text-sm text-gray-500">
+                      Role: {member.role}
                     </p>
                   )}
                 </div>
@@ -275,7 +284,7 @@ export default function Team() {
                 onClick={() => {
                   setShowAddModal(false);
                   setEditingMember(null);
-                  setMemberForm({ name: '', email: '', nipp: '', jabatan: '', color: '#8B5CF6' });
+                  setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
@@ -338,6 +347,21 @@ export default function Team() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role Level
+                </label>
+                <select
+                  value={memberForm.role}
+                  onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="Level1">Level 1</option>
+                  <option value="Level2">Level 2</option>
+                  <option value="Level3">Level 3</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Color
                 </label>
@@ -362,7 +386,7 @@ export default function Team() {
                   onClick={() => {
                     setShowAddModal(false);
                     setEditingMember(null);
-                    setMemberForm({ name: '', email: '', nipp: '', jabatan: '', color: '#8B5CF6' });
+                    setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
