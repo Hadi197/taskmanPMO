@@ -7,6 +7,7 @@ import CalendarView from './CalendarView';
 import TaskManagement from './TaskManagement';
 import Dashboard from './Dashboard';
 import Team from './Team';
+import Board from './Board';
 import ConnectionStatus from './ConnectionStatus';
 
 export default function MondayClone() {
@@ -16,11 +17,25 @@ export default function MondayClone() {
   const [loading, setLoading] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const { user, signOut } = useAuth();
+  const { user, signOut, currentUserRole, getCurrentUserRole } = useAuth();
 
   useEffect(() => {
     loadBoards();
   }, []);
+
+  // Fetch user role when user is available and role is not yet set
+  useEffect(() => {
+    if (user && currentUserRole === null) {
+      getCurrentUserRole();
+    }
+  }, [user, currentUserRole]);
+
+  // Redirect non-admin users away from team view
+  useEffect(() => {
+    if (currentView === 'team' && currentUserRole !== 'Level1') {
+      setCurrentView('dashboard');
+    }
+  }, [currentView, currentUserRole]);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -121,15 +136,27 @@ export default function MondayClone() {
                 Tasks
               </button>
               <button
-                onClick={() => setCurrentView('team')}
+                onClick={() => setCurrentView('boards')}
                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                  currentView === 'team'
+                  currentView === 'boards'
                     ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Team
+                Boards
               </button>
+              {currentUserRole === 'Level1' && (
+                <button
+                  onClick={() => setCurrentView('team')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    currentView === 'team'
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Team
+                </button>
+              )}
               <button
                 onClick={() => setCurrentView('calendar')}
                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
@@ -187,7 +214,9 @@ export default function MondayClone() {
           <div className="max-w-7xl mx-auto p-6">
             <TaskManagement boardId={currentBoardId} />
           </div>
-        ) : currentView === 'team' ? (
+        ) : currentView === 'boards' ? (
+          <Board />
+        ) : currentView === 'team' && currentUserRole === 'Level1' ? (
           <Team />
         ) : currentView === 'calendar' ? (
           <CalendarView

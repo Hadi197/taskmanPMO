@@ -20,6 +20,11 @@ export default function Dashboard() {
   const [teamPerformance, setTeamPerformance] = useState([]);
   const [statusDistribution, setStatusDistribution] = useState({});
   const [loading, setLoading] = useState(true);
+  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
+  const [boardForm, setBoardForm] = useState({
+    name: '',
+    description: ''
+  });
 
   useEffect(() => {
     loadDashboardData();
@@ -138,6 +143,42 @@ export default function Dashboard() {
       console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createBoard = async (e) => {
+    e.preventDefault();
+
+    if (!boardForm.name.trim()) {
+      alert('Board name is required');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('boards')
+        .insert([{
+          name: boardForm.name.trim(),
+          description: boardForm.description.trim(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select();
+
+      if (error) throw error;
+
+      // Reset form and close modal
+      setBoardForm({ name: '', description: '' });
+      setShowCreateBoardModal(false);
+
+      // Reload dashboard data to reflect new board
+      loadDashboardData();
+
+      alert('Board created successfully!');
+
+    } catch (error) {
+      console.error('Error creating board:', error);
+      alert('Failed to create board. Please try again.');
     }
   };
 
@@ -432,9 +473,12 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200 group">
+            <button
+              onClick={() => setShowCreateBoardModal(true)}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200 group"
+            >
               <Plus className="w-6 h-6 text-gray-400 group-hover:text-indigo-500" />
-              <span className="text-sm font-medium text-gray-700 group-hover:text-indigo-700">New Task</span>
+              <span className="text-sm font-medium text-gray-700 group-hover:text-indigo-700">New Board</span>
             </button>
 
             <button className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-300 hover:border-green-400 hover:bg-green-50 transition-all duration-200 group">
@@ -454,6 +498,67 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Create Board Modal */}
+      {showCreateBoardModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Board</h3>
+
+              <form onSubmit={createBoard}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Board Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Enter board name"
+                      value={boardForm.name}
+                      onChange={(e) => setBoardForm(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description (Optional)
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Enter board description"
+                      rows="3"
+                      value={boardForm.description}
+                      onChange={(e) => setBoardForm(prev => ({ ...prev, description: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateBoardModal(false);
+                      setBoardForm({ name: '', description: '' });
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
+                  >
+                    Create Board
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

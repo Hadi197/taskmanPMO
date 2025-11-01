@@ -13,6 +13,12 @@ if (!supabaseAnonKey) {
 
 // Create Supabase client with enhanced configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  },
   realtime: {
     params: {
       eventsPerSecond: 10,

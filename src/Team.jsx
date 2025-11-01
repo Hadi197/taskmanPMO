@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, User, Mail, Calendar, Plus, Edit2, Trash2, MoreVertical, X } from 'lucide-react';
 import { supabase } from './supabaseClient';
+import { useAuth } from './AuthContext';
 
 export default function Team() {
   const [teamMembers, setTeamMembers] = useState([]);
@@ -8,18 +9,24 @@ export default function Team() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
 
+  const { currentUserRole, getCurrentUserRole } = useAuth();
+
+  // Helper function to check if current user is admin (Level1)
+  const isAdmin = () => currentUserRole === 'Level1';
+
   // Form states
   const [memberForm, setMemberForm] = useState({
     name: '',
     email: '',
     nipp: '',
     jabatan: '',
-    role: 'Level1',
+    role: 'Level2',
     color: '#8B5CF6'
   });
 
   useEffect(() => {
     loadTeamMembers();
+    getCurrentUserRole();
   }, []);
 
   const loadTeamMembers = async () => {
@@ -76,7 +83,7 @@ export default function Team() {
       }
 
       // Reset form and reload
-      setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
+      setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level2', color: '#8B5CF6' });
       setShowAddModal(false);
       setEditingMember(null);
       loadTeamMembers();
@@ -92,14 +99,60 @@ export default function Team() {
       email: member.email || '',
       nipp: member.nipp || '',
       jabatan: member.jabatan || '',
-      role: member.role || 'Level1',
+      role: member.role || 'Level2',
       color: member.color || '#8B5CF6'
     });
     setShowAddModal(true);
   };
 
+    const handleApproveMember = async (memberId, memberName) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ jabatan: 'approved' })
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      // Update local state
+      setTeamMembers(teamMembers.map(member =>
+        member.id === memberId ? { ...member, jabatan: 'approved' } : member
+      ));
+
+      alert(`${memberName} has been approved and can now login.`);
+    } catch (error) {
+      console.error('Error approving member:', error);
+      alert('Failed to approve member. Please try again.');
+    }
+  };
+
+  const handleRejectMember = async (memberId, memberName) => {
+    if (!confirm(`Are you sure you want to reject ${memberName}? They will not be able to login.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ jabatan: 'rejected' })
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      // Update local state
+      setTeamMembers(teamMembers.map(member =>
+        member.id === memberId ? { ...member, jabatan: 'rejected' } : member
+      ));
+
+      alert(`${memberName} has been rejected.`);
+    } catch (error) {
+      console.error('Error rejecting member:', error);
+      alert('Failed to reject member. Please try again.');
+    }
+  };
+
   const handleDelete = async (memberId, memberName) => {
-    if (!confirm(`Are you sure you want to delete "${memberName}"? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete ${memberName}? This action cannot be undone.`)) {
       return;
     }
 
@@ -110,9 +163,14 @@ export default function Team() {
         .eq('id', memberId);
 
       if (error) throw error;
-      loadTeamMembers();
+
+      // Update local state
+      setTeamMembers(teamMembers.filter(member => member.id !== memberId));
+
+      alert(`${memberName} has been deleted successfully.`);
     } catch (error) {
-      console.error('Error deleting team member:', error);
+      console.error('Error deleting member:', error);
+      alert('Failed to delete member. Please try again.');
     }
   };
 
@@ -153,17 +211,19 @@ export default function Team() {
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            setEditingMember(null);
-            setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
-            setShowAddModal(true);
-          }}
-          className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Add Team Member
-        </button>
+        {isAdmin() && (
+          <button
+            onClick={() => {
+              setEditingMember(null);
+              setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level2', color: '#8B5CF6' });
+              setShowAddModal(true);
+            }}
+            className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Add Team Member
+          </button>
+        )}
       </div>
 
       {/* Team Members Grid */}
@@ -204,47 +264,84 @@ export default function Team() {
                       Role: {member.role}
                     </p>
                   )}
+                  {member.jabatan && (member.jabatan === 'pending_approval' || member.jabatan === 'approved' || member.jabatan === 'rejected') && (
+                    <div className="mt-2">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        member.jabatan === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : member.jabatan === 'pending_approval'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {member.jabatan === 'approved' ? 'Approved' : member.jabatan === 'pending_approval' ? 'Pending Approval' : 'Rejected'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    // Simple dropdown menu
-                    const menu = document.getElementById(`menu-${member.id}`);
-                    menu.classList.toggle('hidden');
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <MoreVertical className="w-4 h-4 text-gray-500" />
-                </button>
-
-                <div
-                  id={`menu-${member.id}`}
-                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 hidden z-10"
-                >
+              {/* Approval/Rejection buttons for pending members */}
+              {isAdmin() && member.jabatan === 'pending_approval' && (
+                <div className="flex gap-2 mb-4">
                   <button
-                    onClick={() => {
-                      handleEdit(member);
-                      document.getElementById(`menu-${member.id}`).classList.add('hidden');
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    onClick={() => handleApproveMember(member.id, member.name)}
+                    className="px-3 py-1 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
                   >
-                    <Edit2 className="w-4 h-4" />
-                    Edit
+                    Approve
                   </button>
                   <button
-                    onClick={() => {
-                      handleDelete(member.id, member.name);
-                      document.getElementById(`menu-${member.id}`).classList.add('hidden');
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    onClick={() => handleRejectMember(member.id, member.name)}
+                    className="px-3 py-1 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
+                    Reject
                   </button>
                 </div>
-              </div>
+              )}
+
+              {isAdmin() && (
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      // Simple dropdown menu
+                      const menu = document.getElementById(`menu-${member.id}`);
+                      menu.classList.toggle('hidden');
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4 text-gray-500" />
+                  </button>
+
+                  <div
+                    id={`menu-${member.id}`}
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 hidden z-10"
+                  >
+                    {isAdmin() && (
+                      <>
+                        <button
+                          onClick={() => {
+                            handleEdit(member);
+                            document.getElementById(`menu-${member.id}`).classList.add('hidden');
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDelete(member.id, member.name);
+                            document.getElementById(`menu-${member.id}`).classList.add('hidden');
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="text-sm text-gray-500">
@@ -263,12 +360,17 @@ export default function Team() {
           <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No team members yet</h3>
           <p className="text-gray-500 mb-6">Get started by adding your first team member</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200"
-          >
-            Add Team Member
-          </button>
+          {isAdmin() && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200"
+            >
+              Add Team Member
+            </button>
+          )}
+          {!isAdmin() && (
+            <p className="text-gray-500">Only administrators can add team members</p>
+          )}
         </div>
       )}
 
@@ -284,7 +386,7 @@ export default function Team() {
                 onClick={() => {
                   setShowAddModal(false);
                   setEditingMember(null);
-                  setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
+                  setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level2', color: '#8B5CF6' });
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
@@ -386,7 +488,7 @@ export default function Team() {
                   onClick={() => {
                     setShowAddModal(false);
                     setEditingMember(null);
-                    setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level1', color: '#8B5CF6' });
+                    setMemberForm({ name: '', email: '', nipp: '', jabatan: '', role: 'Level2', color: '#8B5CF6' });
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
