@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Clock, AlertTriangle, User, Calendar, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Clock, AlertTriangle, User, Calendar, MoreVertical, FileText, Download, X } from 'lucide-react';
 import { supabase, handleSupabaseError, retryOperation } from './supabaseClient';
 import FileUpload from './FileUpload';
 
@@ -23,6 +23,8 @@ export default function TaskManagement({ boardId }) {
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [selectedTaskForDocuments, setSelectedTaskForDocuments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState([]);
 
@@ -268,6 +270,33 @@ export default function TaskManagement({ boardId }) {
     setShowAddModal(true);
   };
 
+  const openDocumentsModal = (task) => {
+    setSelectedTaskForDocuments(task);
+    setShowDocumentsModal(true);
+  };
+
+  const closeDocumentsModal = () => {
+    setShowDocumentsModal(false);
+    setSelectedTaskForDocuments(null);
+  };
+
+  const downloadFile = (file) => {
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const renderTaskRow = (task, level = 0) => {
     const isExpanded = expandedTasks.has(task.id);
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
@@ -371,6 +400,15 @@ export default function TaskManagement({ boardId }) {
                   title="Add Subtask"
                 >
                   <Plus className="w-4 h-4" />
+                </button>
+              )}
+              {task.attachments && task.attachments.length > 0 && (
+                <button
+                  onClick={() => openDocumentsModal(task)}
+                  className="text-green-600 hover:text-green-900 p-1"
+                  title="View Documents"
+                >
+                  <FileText className="w-4 h-4" />
                 </button>
               )}
               <button
@@ -600,6 +638,77 @@ export default function TaskManagement({ boardId }) {
                   className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingTask ? 'Update Task' : 'Add Task'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Documents Modal */}
+      {showDocumentsModal && selectedTaskForDocuments && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Documents for "{selectedTaskForDocuments.title}"
+                </h3>
+                <button
+                  onClick={closeDocumentsModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {selectedTaskForDocuments.attachments && selectedTaskForDocuments.attachments.length > 0 ? (
+                  <div className="grid gap-4">
+                    {selectedTaskForDocuments.attachments.map((file, index) => (
+                      <div
+                        key={file.id || index}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <FileText className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatFileSize(file.size)} • Uploaded {file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : 'Unknown'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => downloadFile(file)}
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No documents uploaded for this task</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={closeDocumentsModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                >
+                  Close
                 </button>
               </div>
             </div>
