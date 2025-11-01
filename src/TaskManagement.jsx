@@ -25,6 +25,10 @@ export default function TaskManagement({ boardId }) {
   const [editingTask, setEditingTask] = useState(null);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [selectedTaskForDocuments, setSelectedTaskForDocuments] = useState(null);
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [documentContent, setDocumentContent] = useState(null);
+  const [loadingDocument, setLoadingDocument] = useState(false);
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState([]);
 
@@ -287,6 +291,51 @@ export default function TaskManagement({ boardId }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const viewDocument = async (document) => {
+    setSelectedDocument(document);
+    setLoadingDocument(true);
+    setShowDocumentViewer(true);
+
+    try {
+      // Handle different file types
+      if (document.type.startsWith('image/')) {
+        // Images can be displayed directly
+        setDocumentContent({ type: 'image', url: document.url });
+      } else if (document.type === 'text/plain' || document.name.endsWith('.txt')) {
+        // Try to fetch text content
+        try {
+          const response = await fetch(document.url);
+          const text = await response.text();
+          setDocumentContent({ type: 'text', content: text });
+        } catch (error) {
+          console.error('Error fetching text file:', error);
+          setDocumentContent({ type: 'error', message: 'Unable to load text file' });
+        }
+      } else if (document.type === 'application/pdf') {
+        // For PDFs, we'll embed them
+        setDocumentContent({ type: 'pdf', url: document.url });
+      } else {
+        // For other file types, show metadata
+        setDocumentContent({
+          type: 'unsupported',
+          message: `Preview not available for ${document.type} files. Please download to view.`
+        });
+      }
+    } catch (error) {
+      console.error('Error loading document:', error);
+      setDocumentContent({ type: 'error', message: 'Error loading document' });
+    } finally {
+      setLoadingDocument(false);
+    }
+  };
+
+  const closeDocumentViewer = () => {
+    setShowDocumentViewer(false);
+    setSelectedDocument(null);
+    setDocumentContent(null);
+    setLoadingDocument(false);
   };
 
   const formatFileSize = (bytes) => {
@@ -653,6 +702,16 @@ export default function TaskManagement({ boardId }) {
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
+                            onClick={() => viewDocument(file)}
+                            className="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
+                          >
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View
+                          </button>
+                          <button
                             onClick={() => downloadFile(file)}
                             className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                           >
@@ -678,6 +737,112 @@ export default function TaskManagement({ boardId }) {
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Viewer Modal */}
+      {showDocumentViewer && selectedDocument && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full h-full max-w-full max-h-full flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {selectedDocument.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {formatFileSize(selectedDocument.size)} • {selectedDocument.type}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => downloadFile(selectedDocument)}
+                    className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    Download
+                  </button>
+                  <button
+                    onClick={closeDocumentViewer}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 bg-gray-50 p-4 overflow-auto">
+                {loadingDocument ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    <span className="ml-2 text-gray-600">Loading document...</span>
+                  </div>
+                ) : documentContent ? (
+                  <>
+                    {documentContent.type === 'image' && (
+                      <div className="flex items-center justify-center h-full">
+                        <img
+                          src={documentContent.url}
+                          alt={selectedDocument.name}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                    )}
+
+                    {documentContent.type === 'text' && (
+                      <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono bg-white p-4 rounded border h-full overflow-auto">
+                        {documentContent.content}
+                      </pre>
+                    )}
+
+                    {documentContent.type === 'pdf' && (
+                      <div className="h-full">
+                        <iframe
+                          src={documentContent.url}
+                          className="w-full h-full border-0"
+                          title={selectedDocument.name}
+                        />
+                      </div>
+                    )}
+
+                    {documentContent.type === 'unsupported' && (
+                      <div className="flex flex-col items-center justify-center h-full text-center">
+                        <FileText className="w-16 h-16 text-gray-400 mb-4" />
+                        <p className="text-gray-600 mb-4">{documentContent.message}</p>
+                        <button
+                          onClick={() => downloadFile(selectedDocument)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download File
+                        </button>
+                      </div>
+                    )}
+
+                    {documentContent.type === 'error' && (
+                      <div className="flex flex-col items-center justify-center h-full text-center">
+                        <svg className="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-red-600 mb-4">{documentContent.message}</p>
+                        <button
+                          onClick={() => downloadFile(selectedDocument)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download File
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500">No content to display</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
