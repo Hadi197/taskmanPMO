@@ -49,6 +49,10 @@ export default function TaskManagement({ boardId }) {
     if (boardId) {
       loadTasks();
       loadTeamMembers();
+    } else {
+      // If no boardId, still load team members and set loading to false
+      loadTeamMembers();
+      setLoading(false);
     }
   }, [boardId]);
 
@@ -512,6 +516,33 @@ export default function TaskManagement({ boardId }) {
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         <span className="ml-2 text-gray-600">Loading tasks...</span>
+      </div>
+    );
+  }
+
+  if (!boardId) {
+    return (
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-6 py-12 text-center">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Board Selected</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Create a board first to start managing tasks
+            </p>
+            <button
+              onClick={() => {
+                alert('Please create a board first from the dashboard');
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Board
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
