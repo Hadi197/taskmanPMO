@@ -52,6 +52,30 @@ export default function MondayClone() {
     }
   };
 
+  const loadBoards = async () => {
+    try {
+      const { data: boardsData, error } = await supabase
+        .from('boards')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setBoards(boardsData || []);
+      if ((boardsData || []).length > 0) {
+        setCurrentBoardId(boardsData[0].id);
+      } else {
+        setCurrentBoardId(null);
+      }
+    } catch (error) {
+      console.error('Error loading boards:', error);
+      setBoards([]);
+      setCurrentBoardId(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
