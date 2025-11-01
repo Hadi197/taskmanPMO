@@ -9,15 +9,6 @@ import Dashboard from './Dashboard';
 import Team from './Team';
 import ConnectionStatus from './ConnectionStatus';
 
-const TEAM_MEMBERS = [
-  { id: 1, name: 'Adi Priatmono', color: 'bg-purple-500' },
-  { id: 2, name: 'Dimas', color: 'bg-blue-500' },
-  { id: 3, name: 'Zukril', color: 'bg-green-500' },
-  { id: 4, name: 'Istriono', color: 'bg-orange-500' },
-  { id: 5, name: 'Alexis', color: 'bg-pink-500' },
-  { id: 6, name: 'mami Chika', color: 'bg-yellow-500' }
-];
-
 export default function MondayClone() {
   const [boards, setBoards] = useState([]);
   const [currentBoardId, setCurrentBoardId] = useState(null);

@@ -3,6 +3,23 @@ import { supabase } from './supabaseClient';
 
 const AuthContext = createContext({});
 
+// Helper function to generate random colors for team members
+const getRandomColor = () => {
+  const colors = [
+    '#8B5CF6', // purple
+    '#3B82F6', // blue
+    '#10B981', // green
+    '#F59E0B', // orange
+    '#EF4444', // red
+    '#EC4899', // pink
+    '#84CC16', // lime
+    '#06B6D4', // cyan
+    '#8B5A2B', // brown
+    '#6B7280'  // gray
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -52,6 +69,36 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (error) throw error;
+
+      // Automatically create team member after successful signup
+      if (data.user && metadata.full_name) {
+        try {
+          const teamMemberData = {
+            id: data.user.id,
+            name: metadata.full_name,
+            email: email,
+            nipp: '',
+            jabatan: 'Staff',
+            role: 'Level1',
+            color: getRandomColor(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const { error: teamError } = await supabase
+            .from('team_members')
+            .insert([teamMemberData]);
+
+          if (teamError) {
+            console.warn('Failed to create team member, but user account was created:', teamError);
+          } else {
+            console.log('Team member created successfully for user:', data.user.id);
+          }
+        } catch (teamError) {
+          console.warn('Error creating team member:', teamError);
+        }
+      }
+
       return { data, error: null };
     } catch (error) {
       console.error('Sign up error:', error);
