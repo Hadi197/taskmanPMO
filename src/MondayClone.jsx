@@ -6,6 +6,7 @@ import CalendarView from './CalendarView';
 import TaskManagement from './TaskManagement';
 import Dashboard from './Dashboard';
 import Team from './Team';
+import ConnectionStatus from './ConnectionStatus';
 
 const TEAM_MEMBERS = [
   { id: 1, name: 'Adi Priatmono', color: 'bg-purple-500' },
@@ -68,6 +69,7 @@ export default function MondayClone() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <ConnectionStatus />
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-indigo-100/50 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

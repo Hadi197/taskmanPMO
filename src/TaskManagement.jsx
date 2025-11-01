@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Clock, AlertTriangle, User, Calendar, MoreVertical } from 'lucide-react';
-import { supabase } from './supabaseClient';
+import { supabase, handleSupabaseError, retryOperation } from './supabaseClient';
+import FileUpload from './FileUpload';
 
 const STATUS_OPTIONS = [
   { value: 'Not Started', label: 'Not Started', color: 'bg-gray-400', progress: 0 },
@@ -33,6 +34,8 @@ export default function TaskManagement({ boardId }) {
     priority: 'Medium',
     assigned_to: '',
     due_date: '',
+    progress: 0,
+    attachments: [],
     parent_id: null
   });
 
@@ -44,8 +47,7 @@ export default function TaskManagement({ boardId }) {
   }, [boardId]);
 
   const loadTasks = async () => {
-    try {
-      setLoading(true);
+    const result = await retryOperation(async () => {
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -53,6 +55,19 @@ export default function TaskManagement({ boardId }) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      return data;
+    });
+
+    if (!result.success) {
+      console.error('Failed to load tasks:', result.error);
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = result.data;
 
       // Organize tasks into hierarchical structure
       const taskMap = new Map();
@@ -60,7 +75,15 @@ export default function TaskManagement({ boardId }) {
 
       // First pass: create task map
       data.forEach(task => {
-        taskMap.set(task.id, { ...task, subtasks: [] });
+        // Parse attachments from fileid field
+        let attachments = [];
+        try {
+          attachments = task.fileid ? JSON.parse(task.fileid) : [];
+        } catch (e) {
+          attachments = [];
+        }
+
+        taskMap.set(task.id, { ...task, subtasks: [], attachments });
       });
 
       // Second pass: build hierarchy
@@ -77,7 +100,7 @@ export default function TaskManagement({ boardId }) {
 
       setTasks(rootTasks);
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      console.error('Error processing tasks:', error);
       setTasks([]);
     } finally {
       setLoading(false);
@@ -85,18 +108,29 @@ export default function TaskManagement({ boardId }) {
   };
 
   const loadTeamMembers = async () => {
-    try {
+    const result = await retryOperation(async () => {
       const { data, error } = await supabase
         .from('team_members')
         .select('*')
         .order('name', { ascending: true });
 
       if (error) throw error;
-      setTeamMembers(data || []);
-    } catch (error) {
-      console.error('Error loading team members:', error);
+      return data;
+    });
+
+    if (!result.success) {
+      console.error('Failed to load team members:', result.error);
       setTeamMembers([]);
+      return;
     }
+
+    setTeamMembers(result.data || []);
+  };
+
+  const getTeamMemberRole = (assignedToName) => {
+    if (!assignedToName) return null;
+    const member = teamMembers.find(member => member.name === assignedToName);
+    return member ? member.role : null;
   };
 
   const toggleTaskExpansion = (taskId) => {
@@ -112,7 +146,7 @@ export default function TaskManagement({ boardId }) {
   const handleAddTask = async () => {
     if (!taskForm.title.trim()) return;
 
-    try {
+    const result = await retryOperation(async () => {
       // Explicitly construct the data object with only the fields we want
       const taskData = {
         title: taskForm.title,
@@ -121,6 +155,8 @@ export default function TaskManagement({ boardId }) {
         priority: taskForm.priority,
         assigned_to: taskForm.assigned_to || null,
         due_date: taskForm.due_date || null,
+        progress: taskForm.progress || 0,
+        fileid: JSON.stringify(taskForm.attachments),
         board_id: boardId,
         parent_id: taskForm.parent_id
       };
@@ -132,14 +168,18 @@ export default function TaskManagement({ boardId }) {
         .single();
 
       if (error) throw error;
+      return data;
+    });
 
-      setShowAddModal(false);
-      resetForm();
-      loadTasks();
-    } catch (error) {
-      console.error('Error adding task:', error);
-      alert('Failed to add task. Please try again.');
+    if (!result.success) {
+      console.error('Failed to add task:', result.error);
+      alert(result.error);
+      return;
     }
+
+    setShowAddModal(false);
+    resetForm();
+    loadTasks();
   };
 
   const handleUpdateTask = async () => {
@@ -153,7 +193,9 @@ export default function TaskManagement({ boardId }) {
         status: taskForm.status,
         priority: taskForm.priority,
         assigned_to: taskForm.assigned_to || null,
-        due_date: taskForm.due_date || null
+        due_date: taskForm.due_date || null,
+        progress: taskForm.progress || 0,
+        fileid: JSON.stringify(taskForm.attachments)
       };
 
       const { error } = await supabase
@@ -200,6 +242,8 @@ export default function TaskManagement({ boardId }) {
       priority: 'Medium',
       assigned_to: '',
       due_date: '',
+      progress: 0,
+      attachments: [],
       parent_id: null
     });
   };
@@ -213,6 +257,8 @@ export default function TaskManagement({ boardId }) {
       priority: task.priority,
       assigned_to: task.assigned_to || '',
       due_date: task.due_date || '',
+      progress: task.progress || 0,
+      attachments: task.attachments || [],
       parent_id: task.parent_id
     });
   };
@@ -271,17 +317,49 @@ export default function TaskManagement({ boardId }) {
             {task.assigned_to || '-'}
           </td>
           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {getTeamMemberRole(task.assigned_to) || '-'}
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             {task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'}
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            {task.attachments && task.attachments.length > 0 ? (
+              <div className="max-w-xs">
+                <div className="flex items-center text-sm text-gray-600 mb-1">
+                  <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  {task.attachments.length} file{task.attachments.length !== 1 ? 's' : ''}
+                </div>
+                <div className="space-y-1">
+                  {task.attachments.slice(0, 2).map((file, index) => (
+                    <div key={index} className="text-xs text-gray-500 truncate flex items-center">
+                      <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {file.name}
+                    </div>
+                  ))}
+                  {task.attachments.length > 2 && (
+                    <div className="text-xs text-gray-400">
+                      +{task.attachments.length - 2} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <span className="text-sm text-gray-400">-</span>
+            )}
           </td>
           <td className="px-6 py-4 whitespace-nowrap">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-300 ${statusOption?.color}`}
-                style={{ width: `${statusOption?.progress || 0}%` }}
+                style={{ width: `${task.progress || 0}%` }}
               ></div>
             </div>
             <div className="text-xs text-gray-500 mt-1 text-center">
-              {statusOption?.progress || 0}%
+              {task.progress || 0}%
             </div>
           </td>
           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -366,7 +444,13 @@ export default function TaskManagement({ boardId }) {
                 Assigned To
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Team Role
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Due Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Attachments
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Progress
@@ -379,7 +463,7 @@ export default function TaskManagement({ boardId }) {
           <tbody className="bg-white divide-y divide-gray-200">
             {tasks.length === 0 ? (
               <tr>
-                <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
                   <div className="flex flex-col items-center">
                     <p className="text-lg font-medium">No tasks yet</p>
                     <p className="text-sm">Create your first task to get started</p>
@@ -453,6 +537,19 @@ export default function TaskManagement({ boardId }) {
                   </div>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Progress (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={taskForm.progress}
+                    onChange={(e) => setTaskForm(prev => ({ ...prev, progress: parseInt(e.target.value) || 0 }))}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Enter progress percentage (0-100)"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Assigned To</label>
@@ -479,6 +576,12 @@ export default function TaskManagement({ boardId }) {
                   </div>
                 </div>
               </div>
+
+              <FileUpload
+                taskId={editingTask?.id || 'new'}
+                onFilesChange={(files) => setTaskForm(prev => ({ ...prev, attachments: files }))}
+                existingFiles={taskForm.attachments}
+              />
 
               <div className="flex justify-end space-x-3 mt-6">
                 <button
