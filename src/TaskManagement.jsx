@@ -352,35 +352,6 @@ export default function TaskManagement({ boardId }) {
             {task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'}
           </td>
           <td className="px-6 py-4 whitespace-nowrap">
-            {task.attachments && task.attachments.length > 0 ? (
-              <div className="max-w-xs">
-                <div className="flex items-center text-sm text-gray-600 mb-1">
-                  <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                  </svg>
-                  {task.attachments.length} file{task.attachments.length !== 1 ? 's' : ''}
-                </div>
-                <div className="space-y-1">
-                  {task.attachments.slice(0, 2).map((file, index) => (
-                    <div key={index} className="text-xs text-gray-500 truncate flex items-center">
-                      <svg className="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      {file.name}
-                    </div>
-                  ))}
-                  {task.attachments.length > 2 && (
-                    <div className="text-xs text-gray-400">
-                      +{task.attachments.length - 2} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <span className="text-sm text-gray-400">-</span>
-            )}
-          </td>
-          <td className="px-6 py-4 whitespace-nowrap">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-300 ${statusOption?.color}`}
@@ -488,9 +459,6 @@ export default function TaskManagement({ boardId }) {
                 Due Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Attachments
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Progress
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -501,7 +469,7 @@ export default function TaskManagement({ boardId }) {
           <tbody className="bg-white divide-y divide-gray-200">
             {tasks.length === 0 ? (
               <tr>
-                <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                   <div className="flex flex-col items-center">
                     <p className="text-lg font-medium">No tasks yet</p>
                     <p className="text-sm">Create your first task to get started</p>
