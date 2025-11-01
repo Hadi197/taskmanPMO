@@ -293,6 +293,60 @@ export default function TaskManagement({ boardId }) {
     document.body.removeChild(link);
   };
 
+  const deleteDocument = async (fileToDelete) => {
+    if (!window.confirm(`Are you sure you want to delete "${fileToDelete.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Delete file from Supabase storage
+      const { error: storageError } = await supabase.storage
+        .from('task-documents')
+        .remove([fileToDelete.path]);
+
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+        alert('Failed to delete file from storage. Please try again.');
+        return;
+      }
+
+      // Update the task's attachments in the database
+      const updatedAttachments = selectedTaskForDocuments.attachments.filter(file => file.id !== fileToDelete.id);
+      const fileidJson = JSON.stringify(updatedAttachments);
+
+      const { error: dbError } = await supabase
+        .from('tasks')
+        .update({ fileid: fileidJson })
+        .eq('id', selectedTaskForDocuments.id);
+
+      if (dbError) {
+        console.error('Error updating task attachments:', dbError);
+        alert('File deleted from storage but failed to update task. Please refresh the page.');
+        return;
+      }
+
+      // Update the local state
+      setSelectedTaskForDocuments(prev => ({
+        ...prev,
+        attachments: updatedAttachments
+      }));
+
+      // Also update the tasks state to reflect the change
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === selectedTaskForDocuments.id
+            ? { ...task, attachments: updatedAttachments }
+            : task
+        )
+      );
+
+      alert(`File "${fileToDelete.name}" has been deleted successfully.`);
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      alert('An unexpected error occurred while deleting the file. Please try again.');
+    }
+  };
+
   const viewDocument = async (document) => {
     setSelectedDocument(document);
     setLoadingDocument(true);
@@ -717,6 +771,17 @@ export default function TaskManagement({ boardId }) {
                           >
                             <Download className="w-4 h-4 mr-1" />
                             Download
+                          </button>
+                          <button
+                            onClick={() => deleteDocument(file)}
+                            className="inline-flex items-center px-3 py-1 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100"
+                            onMouseEnter={(e) => e.target.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete'}
+                            onMouseLeave={(e) => e.target.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Delete'}
+                          >
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
                           </button>
                         </div>
                       </div>
