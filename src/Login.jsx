@@ -8,6 +8,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [fullName, setFullName] = useState('');
+  const [nipp, setNipp] = useState('');
+  const [jabatan, setJabatan] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,6 +27,8 @@ const Login = () => {
         const { error } = await signUp(email, password, {
           full_name: fullName,
           display_name: fullName,
+          nipp: nipp,
+          jabatan: jabatan,
         });
 
         if (error) {
@@ -54,6 +58,8 @@ const Login = () => {
     setEmail('');
     setPassword('');
     setFullName('');
+    setNipp('');
+    setJabatan('');
   };
 
   return (
@@ -74,21 +80,53 @@ const Login = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             {isSignUp && (
-              <div>
-                <label htmlFor="fullName" className="sr-only">
-                  Full Name
-                </label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required={isSignUp}
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Full Name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
+              <>
+                <div>
+                  <label htmlFor="fullName" className="sr-only">
+                    Full Name
+                  </label>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    required={isSignUp}
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="nipp" className="sr-only">
+                    NIPP
+                  </label>
+                  <input
+                    id="nipp"
+                    name="nipp"
+                    type="text"
+                    required={isSignUp}
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    placeholder="NIPP (Employee ID)"
+                    value={nipp}
+                    onChange={(e) => setNipp(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="jabatan" className="sr-only">
+                    Jabatan
+                  </label>
+                  <input
+                    id="jabatan"
+                    name="jabatan"
+                    type="text"
+                    required={isSignUp}
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                    placeholder="Jabatan (Position)"
+                    value={jabatan}
+                    onChange={(e) => setJabatan(e.target.value)}
+                  />
+                </div>
+              </>
             )}
 
             <div>
